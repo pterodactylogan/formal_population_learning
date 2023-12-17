@@ -3,19 +3,18 @@ import scipy.stats as stats
 import random
 from collections import Counter
 import matplotlib.pyplot as plt
-from cursor import SnaptoCursor
 
 # initial number of bigrams
-N = 10
+N = 40
 
 # words heard before convergence
-W = 10
+W = 50
 
 # population size
-P = 10
+P = 150
 
 # how many times to iterate
-T = 100
+T = 150
 
 # other parameters: stop_prob, incrementation of stop_prob
 
@@ -91,33 +90,36 @@ def learn(grammars, plots=None, mod=1):
 # everyone starts from same initial grammar
 # integers (0 to N-1) represent basis-elements
 # initial ranks are in numerical order
-grammars = [[x for x in range(N)] for i in range(P)]
+#grammars = [[x for x in range(N)] for i in range(P)]
 
 # plot fraction of population with each basis-element in their grammar
-plots = []
-for b in range(N):
-    plots.append([1])
-time = [i for i in range(T+1)]
+##plots = []
+##for b in range(N):
+##    plots.append([1])
+##time = [i for i in range(T+1)]
+##
+##mod = 1
 
-mod = 1
-grammars = learn(grammars, plots, mod)
+##for b in range(N):
+##    if b%mod != 0: continue
+##    plt.plot(time, plots[b], label = str(b))
+##plt.legend()
+##
+##ax = plt.gca()
+##ax.set_ylim([0, 1])
+##
+##plt.show()
 
-for b in range(N):
-    if b%mod != 0: continue
-    plt.plot(time, plots[b], label = str(b))
-plt.legend()
+for i in range(10):
+    grammars = [[x for x in range(N)] for i in range(P)]
+    grammars = learn(grammars)
+    
+    lost = []
+    for b in range(N):
+        num_using = len(list(filter(lambda g: b in g, grammars)))
+        if num_using == 0:
+            lost.append(b)
 
-ax = plt.gca()
-ax.set_ylim([0, 1])
-
-plt.show()
-
-lost = []
-for b in range(N):
-    num_using = len(list(filter(lambda g: b in g, grammars)))
-    if num_using == 0:
-        lost.append(b)
-
-print("number elements lost:", len(lost))
-print(lost)
+    print("number elements lost:", len(lost))
+    print(lost)
 
