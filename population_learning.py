@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 # 2 / (2+n) where n is the number of bigrams in the grammar
 
 # words heard before convergence (diff n from example above)
-n = 40
+n = 5
 
 # initial population conditions
 p_all = 1
@@ -20,9 +20,12 @@ p_none = 0
 # p_all + 4*p_3 + 6*p_2 + 4*p_1 + p_none
 
 all_over_time = [p_all]
+over_time_3 = [p_3]
+over_time_2 = [p_2]
+over_time_1 = [p_1]
 none_over_time = [p_none]
 time = [0]
-for i in range(40):
+for i in range(10):
     # probability some specific bigram is in a given word the listener hears
     # all bigrams will be the same in this setup
     p_bigram_produced = (p_all / 3) + (p_3 * 6 / 5) + (p_2 * 3 / 2) + (p_1 * 2 / 3)
@@ -47,12 +50,18 @@ for i in range(40):
     print("sum:", p_all + 4*p_3 + 6*p_2 + 4*p_1 + p_none)
 
     all_over_time.append(p_all)
+    over_time_3.append(p_3*4)
+    over_time_2.append(p_2*6)
+    over_time_1.append(p_1*4)
     time.append(i+1)
     none_over_time.append(p_none)
 
-plt.plot(time, all_over_time)
-
-plt.plot(time, none_over_time)
+plt.plot(time, all_over_time, label="all")
+plt.plot(time, over_time_3, label="3")
+plt.plot(time, over_time_2, label="2")
+plt.plot(time, over_time_1, label="1")
+plt.plot(time, none_over_time, label="none")
+plt.legend()
 plt.show()
 
 
