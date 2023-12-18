@@ -4,14 +4,11 @@ import random
 from collections import Counter
 import matplotlib.pyplot as plt
 
-# initial number of bigrams
-N = 100
-
 # words heard before convergence
-W = 50
+W = 30
 
 # population size
-P = 150
+P = 300
 
 # how many times to iterate
 T = 150
@@ -19,37 +16,42 @@ T = 150
 # other parameters: stop_prob, incrementation of stop_prob
 
 
+def get_bounded_zipf(length):
+    x = np.arange(1, length+1)
+    weights = 1 / x
+    weights /= weights.sum()
+    return stats.rv_discrete(name='bounded_zipf', values=(x, weights))
+
 
 '''
-grammar: list of items representing unique basis elements (eg bigrams)
+grammar: list of bigrams representing unique basis elements.
 the order of the elements corresponds to their frequency (for this particular
 grammar)
 
 returns: list of basis elements (however they are represented)
-present in a single `word`
+present in a simulated word
 '''
 def get_word(grammar):
     output = []
-    # grammar is list of bigrams
-    stop_prob = .2
 
-    n = len(grammar)
-    x = np.arange(1, n+1)
-    weights = 1 / x
-    weights /= weights.sum()
-    bounded_zipf = stats.rv_discrete(name='bounded_zipf', values=(x, weights))
-    while True:
-        rank = bounded_zipf.rvs(size=1)[0]
-        # insert the basis element with this rank
-        output.append(grammar[rank-1])
-        # with probability stop_prob, return current result
-        if True in random.choices([True, False],
-                                  weights=[stop_prob, 1-stop_prob],
-                                  k=1):
+    length = stats.poisson.rvs(3) - 1
+    last_symb = ""
+    for i in range(length):
+        if last_symb == "":
+            possible_next = grammar
+        else:
+            possible_next = list(filter(lambda x: x[0] == last_symb, grammar))
+
+        if len(possible_next) == 0:
             return output
         
-        # stopping is more likely next time
-        stop_prob += 0.2
+        distro = get_bounded_zipf(len(possible_next))
+        rank = distro.rvs()
+        # insert the basis element with this rank
+        output.append(possible_next[rank-1])
+        last_symb = possible_next[rank-1][1]
+
+    return output
 
 '''
 words: list of `words`, represented by lists of basis-element symbols
@@ -62,7 +64,7 @@ def get_grammar(words):
     return([x[0] for x in counts.most_common()])
 
 
-def learn(grammars, plots=None, mod=1):
+def learn(grammars, all_elems, plots=None, mod=1):
     # for each timestep
     for t in range(T):
         new_grammars = []
@@ -79,30 +81,35 @@ def learn(grammars, plots=None, mod=1):
         grammars = new_grammars
 
         if plots != None:
-            for b in range(N):
+            for b in range(len(all_elems)):
                 if b%mod != 0: continue
-                num_using = len(list(filter(lambda g: b in g, grammars)))
+                num_using = len(list(filter(lambda g: all_elems[b] in g, grammars)))
                 plots[b].append(num_using / P)
 
     return grammars
 
+back_vowels = ["ɯ", "u", "a", "o"]
+front_vowels = ["i", "y", "e", "ø"]
 
-# everyone starts from same initial grammar
-# integers (0 to N-1) represent basis-elements
-# initial ranks are in numerical order
-#grammars = [[x for x in range(N)] for i in range(P)]
+grammar = [x+y for x in back_vowels for y in back_vowels]
+grammar += [x+y for x in front_vowels for y in front_vowels]
+random.shuffle(grammar)
 
-# plot fraction of population with each basis-element in their grammar
+grammars = [grammar.copy() for i in range(P)]
+
+output = learn(grammars, grammar)
+
 ##plots = []
-##for b in range(N):
+##mod=1
+##for b in range(len(grammar)):
 ##    plots.append([1])
 ##time = [i for i in range(T+1)]
 ##
-##mod = 1
-
-##for b in range(N):
+##output = learn(grammars, grammar, plots)
+##
+##for b in range(len(grammar)):
 ##    if b%mod != 0: continue
-##    plt.plot(time, plots[b], label = str(b))
+##    plt.plot(time, plots[b], label = grammar[b])
 ##plt.legend()
 ##
 ##ax = plt.gca()
@@ -110,16 +117,14 @@ def learn(grammars, plots=None, mod=1):
 ##
 ##plt.show()
 
-for i in range(3):
-    grammars = [[x for x in range(N)] for i in range(P)]
-    grammars = learn(grammars)
-    
-    lost = []
-    for b in range(N):
-        num_using = len(list(filter(lambda g: b in g, grammars)))
-        if num_using == 0:
-            lost.append(b)
 
-    print("number elements lost:", len(lost))
-    print(lost)
+
+lost = []
+for b in range(len(grammar)):
+    num_using = len(list(filter(lambda g: grammar[b] in g, output)))
+    if num_using == 0:
+        lost.append(grammar[b])
+
+print("number elements lost:", len(lost))
+print(lost)
 
