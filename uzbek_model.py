@@ -5,13 +5,18 @@ from collections import Counter
 import matplotlib.pyplot as plt
 
 # words heard before convergence
-W = 50
+W = 40
 
 # population size
 P = 300
 
 # how many times to iterate
 T = 150
+
+# number of speakers of alternate grammar
+A = int(P*.3)
+
+# other parameters: stop_prob, incrementation of stop_prob
 
 
 def get_bounded_zipf(length):
@@ -62,10 +67,11 @@ def get_grammar(words):
     return([x[0] for x in counts.most_common()])
 
 
+
 def learn(grammars, all_elems, plots=None, mod=1):
     # for each timestep
     for t in range(T):
-        if t%20 == 0: print(t)
+        if t%10 == 0: print(t)
         new_grammars = []
         # for each individual in the population
         for i in range(P):
@@ -87,11 +93,20 @@ def learn(grammars, all_elems, plots=None, mod=1):
 
     return grammars
 
+
+
 back_vowels = {"a": 0.324, "u": 0.127,
                "o": 0.084, "ɯ": 0.025} # vowel: frequency
 
 front_vowels = {"e": 0.166, "i":0.162,
                 "ø": 0.096, "y": 0.042}
+
+# with merger + disharmony
+persian_vowels = {"a": 0.324, "e": 0.166, "i": 0.162,
+                  "u": 0.127, "o": 0.084}
+
+# disharmony only
+#persian_vowels = front_vowels | back_vowels
 
 # order bigrams according to vowel frequencies
 bigram_freqs = []
@@ -106,36 +121,57 @@ for x in front_vowels:
                              front_vowels[x] * front_vowels[y]))
 
 bigram_freqs.sort(key=lambda x: x[1], reverse=True)
-grammar = [b[0] for b in bigram_freqs]
+turkic_grammar = [b[0] for b in bigram_freqs]
 
-grammars = [grammar.copy() for i in range(P)]
+bigram_freqs = []
+for x in persian_vowels:
+    for y in persian_vowels:
+        bigram_freqs.append((x+y, persian_vowels[x]*persian_vowels[y]))
 
-#output = learn(grammars, grammar)
+bigram_freqs.sort(key=lambda x: x[1], reverse=True)
+persian_grammar = [b[0] for b in bigram_freqs]
+
+grammars = [turkic_grammar.copy() for i in range(P-A)]
+grammars += [persian_grammar.copy() for i in range(A)]
+
+possible_bigrams = list(set(turkic_grammar + persian_grammar))
 
 plots = []
 mod=1
-for b in range(len(grammar)):
-    plots.append([1])
+for b in possible_bigrams:
+    if b in persian_grammar and b in turkic_grammar:
+        plots.append([1])
+    elif b in turkic_grammar:
+        plots.append([(P-A)/P])
+    elif b in persian_grammar:
+        plots.append([A/P])
+    else:
+        print("?")
+        print(b)
+        plots.append([0])
+    
 time = [i for i in range(T+1)]
 
-output = learn(grammars, grammar, plots)
+output = learn(grammars, possible_bigrams, plots)
 
-lost = []
-for b in range(len(grammar)):
-    num_using = len(list(filter(lambda g: grammar[b] in g, output)))
-    if num_using == 0:
-        lost.append(grammar[b])
-
-print("number elements lost:", len(lost))
-print(lost)
-
-for b in range(len(grammar)):
+for b in range(len(possible_bigrams)):
     if b%mod != 0: continue
-    plt.plot(time, plots[b], label = grammar[b])
+    plt.plot(time, plots[b], label = possible_bigrams[b])
 plt.legend()
 
 ax = plt.gca()
 ax.set_ylim([0, 1])
 
 plt.show()
+
+
+
+lost = []
+for b in range(len(possible_bigrams)):
+    num_using = len(list(filter(lambda g: possible_bigrams[b] in g, output)))
+    if num_using == 0:
+        lost.append(possible_bigrams[b])
+
+print("number elements lost:", len(lost))
+print(lost)
 
