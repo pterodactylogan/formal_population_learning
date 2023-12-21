@@ -5,10 +5,10 @@ from collections import Counter
 import matplotlib.pyplot as plt
 
 # initial number of bigrams
-N = 100
+N = 6
 
 # words heard before convergence
-W = 50
+W = 10
 
 # population size
 P = 150
@@ -90,36 +90,37 @@ def learn(grammars, plots=None, mod=1):
 # everyone starts from same initial grammar
 # integers (0 to N-1) represent basis-elements
 # initial ranks are in numerical order
-#grammars = [[x for x in range(N)] for i in range(P)]
+grammars = [[x for x in range(N)] for i in range(P)]
 
 # plot fraction of population with each basis-element in their grammar
-##plots = []
-##for b in range(N):
-##    plots.append([1])
-##time = [i for i in range(T+1)]
-##
-##mod = 1
+plots = []
+for b in range(N):
+    plots.append([1])
+time = [i for i in range(T+1)]
 
-##for b in range(N):
-##    if b%mod != 0: continue
-##    plt.plot(time, plots[b], label = str(b))
-##plt.legend()
-##
-##ax = plt.gca()
-##ax.set_ylim([0, 1])
-##
-##plt.show()
+mod = 1
 
-for i in range(3):
-    grammars = [[x for x in range(N)] for i in range(P)]
-    grammars = learn(grammars)
-    
-    lost = []
-    for b in range(N):
-        num_using = len(list(filter(lambda g: b in g, grammars)))
-        if num_using == 0:
-            lost.append(b)
+result = learn(grammars, plots, mod)
+for b in range(N):
+    if b%mod != 0: continue
+    plt.plot(time, plots[b], label = str(b))
+plt.legend()
 
-    print("number elements lost:", len(lost))
-    print(lost)
+ax = plt.gca()
+ax.set_ylim([0, 1])
+
+plt.show()
+
+##for i in range(3):
+##    grammars = [[x for x in range(N)] for i in range(P)]
+##    grammars = learn(grammars)
+##    
+##    lost = []
+##    for b in range(N):
+##        num_using = len(list(filter(lambda g: b in g, grammars)))
+##        if num_using == 0:
+##            lost.append(b)
+##
+##    print("number elements lost:", len(lost))
+##    print(lost)
 

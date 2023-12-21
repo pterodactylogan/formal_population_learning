@@ -8,10 +8,10 @@ from math import comb
 # 2 / (2+n) where n is the number of bigrams in the grammar
 
 # words heard before convergence (diff n from example above)
-w = 20
+w = 4000
 
 # initial number of bigrams
-n = 4
+n = 800
 # value at each index is proportion of population speaking *a specific*
 # language with that size of grammar
 # initialized so that everyon speaks language with n bigrams
@@ -47,12 +47,6 @@ for i in range(10):
 
     for s in range(n+1):
         plots[s].append(comb(n, s) * props[s])
-
-    # check sum to 1
-##    population_sum = 0
-##    for j in range(n+1):
-##        population_sum += props[j] * comb(n, j)
-##    print("sum:", population_sum)
     
     time.append(i+1)
     

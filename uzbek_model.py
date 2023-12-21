@@ -5,16 +5,16 @@ from collections import Counter
 import matplotlib.pyplot as plt
 
 # words heard before convergence
-W = 40
+W = 10
 
 # population size
-P = 300
+P = 150
 
 # how many times to iterate
-T = 150
+T = 50
 
 # number of speakers of alternate grammar
-A = int(P*.3)
+A = int(P*1)
 
 # other parameters: stop_prob, incrementation of stop_prob
 
@@ -68,11 +68,20 @@ def get_grammar(words):
 
 
 
-def learn(grammars, all_elems, plots=None, mod=1):
+def learn(grammars, all_elems, harmony_plot=None, harmonic_bigrams=None,
+          plots=None, mod=1):
+        
     # for each timestep
     for t in range(T):
         if t%10 == 0: print(t)
-        new_grammars = []
+
+        
+        if harmony_plot != None:
+            all_elems = [el for g in grammars for el in g]
+            harmonic = sum(1 for el in all_elems if el in harmonic_bigrams)
+            harmony_plot.append(harmonic / len(all_elems))
+            new_grammars = []
+            
         # for each individual in the population
         for i in range(P):
             # get W words as input
@@ -91,8 +100,12 @@ def learn(grammars, all_elems, plots=None, mod=1):
                 num_using = len(list(filter(lambda g: all_elems[b] in g, grammars)))
                 plots[b].append(num_using / P)
 
+    if harmony_plot != None:
+            all_elems = [el for g in grammars for el in g]
+            harmonic = sum(1 for el in all_elems if el in harmonic_bigrams)
+            harmony_plot.append(harmonic / len(all_elems))
+            new_grammars = []
     return grammars
-
 
 
 back_vowels = {"a": 0.324, "u": 0.127,
@@ -102,11 +115,12 @@ front_vowels = {"e": 0.166, "i":0.162,
                 "ø": 0.096, "y": 0.042}
 
 # with merger + disharmony
+# problem: This starts off 80% harmonic, it really should be more like 50-60
 persian_vowels = {"a": 0.324, "e": 0.166, "i": 0.162,
                   "u": 0.127, "o": 0.084}
 
 # disharmony only
-#persian_vowels = front_vowels | back_vowels
+# persian_vowels = front_vowels | back_vowels
 
 # order bigrams according to vowel frequencies
 bigram_freqs = []
@@ -131,32 +145,20 @@ for x in persian_vowels:
 bigram_freqs.sort(key=lambda x: x[1], reverse=True)
 persian_grammar = [b[0] for b in bigram_freqs]
 
+
 grammars = [turkic_grammar.copy() for i in range(P-A)]
 grammars += [persian_grammar.copy() for i in range(A)]
 
 possible_bigrams = list(set(turkic_grammar + persian_grammar))
-
-plots = []
-mod=1
-for b in possible_bigrams:
-    if b in persian_grammar and b in turkic_grammar:
-        plots.append([1])
-    elif b in turkic_grammar:
-        plots.append([(P-A)/P])
-    elif b in persian_grammar:
-        plots.append([A/P])
-    else:
-        print("?")
-        print(b)
-        plots.append([0])
     
 time = [i for i in range(T+1)]
+harmony_plot = []
 
-output = learn(grammars, possible_bigrams, plots)
+output = learn(grammars, possible_bigrams,
+               harmony_plot = harmony_plot,
+               harmonic_bigrams = turkic_grammar)
 
-for b in range(len(possible_bigrams)):
-    if b%mod != 0: continue
-    plt.plot(time, plots[b], label = possible_bigrams[b])
+plt.plot(time, harmony_plot)
 plt.legend()
 
 ax = plt.gca()
